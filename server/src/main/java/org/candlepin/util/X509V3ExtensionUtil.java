@@ -96,13 +96,13 @@ public class X509V3ExtensionUtil extends X509Util {
         return toReturn;
     }
 
-    public Set<X509ByteExtensionWrapper> getByteExtensions(Set<Product> products,
-        Entitlement ent, String contentPrefix,
+    public Set<X509ByteExtensionWrapper> getByteExtensions(Product sku,
+            Set<Product> products, Entitlement ent, String contentPrefix,
         Map<String, EnvironmentContent> promotedContent) throws IOException {
         Set<X509ByteExtensionWrapper> toReturn =
             new LinkedHashSet<X509ByteExtensionWrapper>();
 
-        EntitlementBody eb = createEntitlementBodyContent(products, ent,
+        EntitlementBody eb = createEntitlementBodyContent(sku, products, ent,
             contentPrefix, promotedContent);
 
         X509ByteExtensionWrapper bodyExtension =
@@ -114,12 +114,12 @@ public class X509V3ExtensionUtil extends X509Util {
         return toReturn;
     }
 
-    public byte[] createEntitlementDataPayload(Set<Product> products,
+    public byte[] createEntitlementDataPayload(Product skuProduct, Set<Product> products,
         Entitlement ent, String contentPrefix,
         Map<String, EnvironmentContent> promotedContent)
         throws UnsupportedEncodingException, IOException {
 
-        EntitlementBody map = createEntitlementBody(products, ent,
+        EntitlementBody map = createEntitlementBody(skuProduct, products, ent,
             contentPrefix, promotedContent);
 
         String json = toJson(map);
@@ -148,7 +148,7 @@ public class X509V3ExtensionUtil extends X509Util {
         return data.toByteArray();
     }
 
-    public EntitlementBody createEntitlementBody(Set<Product> products,
+    public EntitlementBody createEntitlementBody(Product skuProduct, Set<Product> products,
         Entitlement ent, String contentPrefix,
         Map<String, EnvironmentContent> promotedContent) {
 
@@ -157,19 +157,19 @@ public class X509V3ExtensionUtil extends X509Util {
         toReturn.setQuantity(ent.getQuantity());
         toReturn.setSubscription(createSubscription(ent));
         toReturn.setOrder(createOrder(ent.getPool()));
-        toReturn.setProducts(createProducts(products, contentPrefix, promotedContent,
-            ent.getConsumer(), ent));
+        toReturn.setProducts(createProducts(skuProduct, products, contentPrefix,
+                promotedContent, ent.getConsumer(), ent));
         toReturn.setPool(createPool(ent));
 
         return toReturn;
     }
 
-    public EntitlementBody createEntitlementBodyContent(Set<Product> products,
+    public EntitlementBody createEntitlementBodyContent(Product sku, Set<Product> products,
         Entitlement ent, String contentPrefix,
         Map<String, EnvironmentContent> promotedContent) {
 
         EntitlementBody toReturn = new EntitlementBody();
-        toReturn.setProducts(createProducts(products, contentPrefix, promotedContent,
+        toReturn.setProducts(createProducts(sku, products, contentPrefix, promotedContent,
             ent.getConsumer(), ent));
 
         return toReturn;
@@ -269,7 +269,8 @@ public class X509V3ExtensionUtil extends X509Util {
         return toReturn;
     }
 
-    public List<org.candlepin.json.model.Product> createProducts(Set<Product> products,
+    public List<org.candlepin.json.model.Product> createProducts(Product sku,
+            Set<Product> products,
         String contentPrefix, Map<String, EnvironmentContent> promotedContent,
         Consumer consumer, Entitlement ent) {
         List<org.candlepin.json.model.Product> toReturn =
@@ -277,7 +278,12 @@ public class X509V3ExtensionUtil extends X509Util {
 
         for (Product p : Collections2
             .filter(products, PROD_FILTER_PREDICATE)) {
+<<<<<<< HEAD
             toReturn.add(mapProduct(p, contentPrefix, promotedContent, consumer, ent));
+=======
+            toReturn.add(mapProduct(p, sku, contentPrefix, promotedContent, consumer, ent,
+                    entitledProductIds));
+>>>>>>> 69d1700... Major bind time reduction for large SKUs.
         }
         return toReturn;
     }
@@ -288,24 +294,24 @@ public class X509V3ExtensionUtil extends X509Util {
         return toReturn;
     }
 
-    private org.candlepin.json.model.Product mapProduct(Product product,
+    private org.candlepin.json.model.Product mapProduct(Product engProduct, Product sku,
         String contentPrefix, Map<String, EnvironmentContent> promotedContent,
         Consumer consumer, Entitlement ent) {
 
         org.candlepin.json.model.Product toReturn = new org.candlepin.json.model.Product();
 
-        toReturn.setId(product.getId());
-        toReturn.setName(product.getName());
+        toReturn.setId(engProduct.getId());
+        toReturn.setName(engProduct.getName());
 
-        String version = product.hasAttribute("version") ?
-            product.getAttributeValue("version") : "";
+        String version = engProduct.hasAttribute("version") ?
+            engProduct.getAttributeValue("version") : "";
         toReturn.setVersion(version);
 
-        Branding brand = getBranding(ent.getPool(), product.getId());
+        Branding brand = getBranding(ent.getPool(), engProduct.getId());
         toReturn.setBrandType(brand.getType());
         toReturn.setBrandName(brand.getName());
 
-        String productArches = product.getAttributeValue("arch");
+        String productArches = engProduct.getAttributeValue("arch");
         Set<String> productArchSet = Arch.parseArches(productArches);
 
         // FIXME: getParsedArches might make more sense to just return a list
@@ -314,8 +320,14 @@ public class X509V3ExtensionUtil extends X509Util {
             archList.add(arch);
         }
         toReturn.setArchitectures(archList);
+<<<<<<< HEAD
         toReturn.setContent(createContent(filterProductContent(product, ent),
             contentPrefix, promotedContent, consumer, product));
+=======
+        toReturn.setContent(createContent(filterProductContent(engProduct, ent,
+                entitledProductIds), sku,
+            contentPrefix, promotedContent, consumer, engProduct, ent));
+>>>>>>> 69d1700... Major bind time reduction for large SKUs.
 
         return toReturn;
     }
@@ -351,18 +363,29 @@ public class X509V3ExtensionUtil extends X509Util {
      *   product attributes.
      */
     public List<Content> createContent(
-        Set<ProductContent> productContent, String contentPrefix,
+        Set<ProductContent> productContent, Product sku, String contentPrefix,
         Map<String, EnvironmentContent> promotedContent,
         Consumer consumer, Product product) {
 
         List<Content> toReturn = new ArrayList<Content>();
 
+<<<<<<< HEAD
         boolean enableEnvironmentFiltering = config.environmentFilteringEnabled();
+=======
+        boolean enableEnvironmentFiltering = config.getBoolean(
+                ConfigProperties.ENV_CONTENT_FILTERING);
+>>>>>>> 69d1700... Major bind time reduction for large SKUs.
 
         // Return only the contents that are arch appropriate
         Set<ProductContent> archApproriateProductContent = filterContentByContentArch(
             productContent, consumer, product);
 
+<<<<<<< HEAD
+=======
+        List<String> skuDisabled = sku.getSkuDisabledContentIds();
+        List<String> skuEnabled = sku.getSkuEnabledContentIds();
+
+>>>>>>> 69d1700... Major bind time reduction for large SKUs.
         for (ProductContent pc : archApproriateProductContent) {
             Content content = new Content();
             if (enableEnvironmentFiltering) {

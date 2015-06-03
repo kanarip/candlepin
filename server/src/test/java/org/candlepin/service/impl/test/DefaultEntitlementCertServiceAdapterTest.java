@@ -719,7 +719,7 @@ public class DefaultEntitlementCertServiceAdapterTest {
             product, new HashSet<Product>(), new BigInteger("1234"), keyPair(), true);
         verify(mockV3extensionUtil).getExtensions(eq(entitlement), any(String.class),
             any(Map.class));
-        verify(mockV3extensionUtil).getByteExtensions(any(Set.class),
+        verify(mockV3extensionUtil).getByteExtensions(eq(product), any(Set.class),
             eq(entitlement), any(String.class), any(Map.class));
         verifyZeroInteractions(mockExtensionUtil);
     }
@@ -750,7 +750,7 @@ public class DefaultEntitlementCertServiceAdapterTest {
             product, new HashSet<Product>(), new BigInteger("1234"), keyPair(), true);
         verify(mockV3extensionUtil).getExtensions(eq(entitlement), any(String.class),
             any(Map.class));
-        verify(mockV3extensionUtil).getByteExtensions(any(Set.class),
+        verify(mockV3extensionUtil).getByteExtensions(eq(product), any(Set.class),
             eq(entitlement), any(String.class), any(Map.class));
         verifyZeroInteractions(mockExtensionUtil);
     }
@@ -803,7 +803,7 @@ public class DefaultEntitlementCertServiceAdapterTest {
             product, new HashSet<Product>(), new BigInteger("1234"), keyPair(), true);
         verify(mockV3extensionUtil).getExtensions(eq(entitlement), any(String.class),
             any(Map.class));
-        verify(mockV3extensionUtil).getByteExtensions(any(Set.class),
+        verify(mockV3extensionUtil).getByteExtensions(eq(product), any(Set.class),
             eq(entitlement), any(String.class), any(Map.class));
         verifyZeroInteractions(mockExtensionUtil);
     }
@@ -1099,8 +1099,8 @@ public class DefaultEntitlementCertServiceAdapterTest {
         assertTrue(map.containsKey("1.3.6.1.4.1.2312.9.6"));
         assertEquals(map.get("1.3.6.1.4.1.2312.9.6").getValue(), ("3.2"));
 
-        byte[] payload = v3extensionUtil.createEntitlementDataPayload(products, entitlement,
-            "prefix", null);
+        byte[] payload = v3extensionUtil.createEntitlementDataPayload(product,
+                products, entitlement, "prefix", null);
         String stringValue = "";
         try {
             stringValue = processPayload(payload);
@@ -1215,8 +1215,8 @@ public class DefaultEntitlementCertServiceAdapterTest {
             map.put(ext.getOid(), ext);
         }
 
-        byte[] payload = v3extensionUtil.createEntitlementDataPayload(products, entitlement,
-            "prefix", null);
+        byte[] payload = v3extensionUtil.createEntitlementDataPayload(product, products,
+                entitlement, "prefix", null);
         String stringValue = "";
         try {
             stringValue = processPayload(payload);
@@ -1276,8 +1276,8 @@ public class DefaultEntitlementCertServiceAdapterTest {
         assertTrue(map.containsKey("1.3.6.1.4.1.2312.9.6"));
         assertEquals(map.get("1.3.6.1.4.1.2312.9.6").getValue(), ("3.2"));
 
-        byte[] payload = v3extensionUtil.createEntitlementDataPayload(products, entitlement,
-            "prefix", null);
+        byte[] payload = v3extensionUtil.createEntitlementDataPayload(product, products,
+                entitlement, "prefix", null);
         String stringValue = "";
         try {
             stringValue = processPayload(payload);
@@ -1343,8 +1343,8 @@ public class DefaultEntitlementCertServiceAdapterTest {
         assertTrue(map.containsKey("1.3.6.1.4.1.2312.9.6"));
         assertEquals(map.get("1.3.6.1.4.1.2312.9.6").getValue(), ("3.2"));
 
-        byte[] payload = v3extensionUtil.createEntitlementDataPayload(products, entitlement,
-            "prefix", null);
+        byte[] payload = v3extensionUtil.createEntitlementDataPayload(product, products,
+                entitlement, "prefix", null);
         String stringValue = "";
         try {
             stringValue = processPayload(payload);
@@ -1399,8 +1399,8 @@ public class DefaultEntitlementCertServiceAdapterTest {
         assertTrue(map.containsKey("1.3.6.1.4.1.2312.9.6"));
         assertEquals(map.get("1.3.6.1.4.1.2312.9.6").getValue(), ("3.2"));
 
-        byte[] payload = v3extensionUtil.createEntitlementDataPayload(products, entitlement,
-            "prefix", null);
+        byte[] payload = v3extensionUtil.createEntitlementDataPayload(product, products,
+                entitlement, "prefix", null);
         String stringValue = "";
         try {
             stringValue = processPayload(payload);
@@ -1450,8 +1450,8 @@ public class DefaultEntitlementCertServiceAdapterTest {
         assertTrue(map.containsKey("1.3.6.1.4.1.2312.9.6"));
         assertEquals(map.get("1.3.6.1.4.1.2312.9.6").getValue(), ("3.2"));
 
-        byte[] payload = v3extensionUtil.createEntitlementDataPayload(products, entitlement,
-            "prefix", null);
+        byte[] payload = v3extensionUtil.createEntitlementDataPayload(product, products,
+                entitlement, "prefix", null);
         String stringValue = "";
         try {
             stringValue = processPayload(payload);
@@ -1502,8 +1502,8 @@ public class DefaultEntitlementCertServiceAdapterTest {
         when(entitlement.getConsumer().getUuid()).thenReturn("test-consumer");
 
         Set<X509ByteExtensionWrapper> byteExtensions =
-            certServiceAdapter.prepareV3ByteExtensions(products, entitlement, "prefix",
-                null);
+            certServiceAdapter.prepareV3ByteExtensions(product, products, entitlement,
+                    "prefix", null);
         Map<String, X509ByteExtensionWrapper> byteMap =
             new HashMap<String, X509ByteExtensionWrapper>();
         for (X509ByteExtensionWrapper ext : byteExtensions) {
@@ -1547,8 +1547,8 @@ public class DefaultEntitlementCertServiceAdapterTest {
         when(entitlement.getConsumer().getUuid()).thenReturn("test-consumer");
 
         Set<X509ByteExtensionWrapper> byteExtensions =
-            certServiceAdapter.prepareV3ByteExtensions(products, entitlement, "prefix",
-                null);
+            certServiceAdapter.prepareV3ByteExtensions(product, products, entitlement,
+                    "prefix", null);
         Map<String, X509ByteExtensionWrapper> byteMap =
             new HashMap<String, X509ByteExtensionWrapper>();
         for (X509ByteExtensionWrapper ext : byteExtensions) {
@@ -1584,8 +1584,8 @@ public class DefaultEntitlementCertServiceAdapterTest {
         when(largeContentEntitlement.getConsumer().getUuid()).thenReturn("test-consumer");
 
         Set<X509ByteExtensionWrapper> byteExtensions =
-            certServiceAdapter.prepareV3ByteExtensions(products, largeContentEntitlement,
-                "prefix", null);
+            certServiceAdapter.prepareV3ByteExtensions(product, products,
+                    largeContentEntitlement, "prefix", null);
         Map<String, X509ByteExtensionWrapper> byteMap =
             new HashMap<String, X509ByteExtensionWrapper>();
         for (X509ByteExtensionWrapper ext : byteExtensions) {
@@ -1631,8 +1631,8 @@ public class DefaultEntitlementCertServiceAdapterTest {
 
         certServiceAdapter.prepareV3Extensions(entitlement, "prefix", null);
         Set<X509ByteExtensionWrapper> byteExtensions =
-            certServiceAdapter.prepareV3ByteExtensions(products, entitlement, "prefix",
-                null);
+            certServiceAdapter.prepareV3ByteExtensions(extremeProduct, products,
+                    entitlement, "prefix", null);
         Map<String, X509ByteExtensionWrapper> byteMap =
             new HashMap<String, X509ByteExtensionWrapper>();
         for (X509ByteExtensionWrapper ext : byteExtensions) {

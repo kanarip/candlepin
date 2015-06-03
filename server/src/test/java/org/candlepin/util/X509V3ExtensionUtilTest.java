@@ -14,10 +14,16 @@
  */
 package org.candlepin.util;
 
+<<<<<<< HEAD
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
+=======
+import static org.junit.Assert.*;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.*;
+>>>>>>> 69d1700... Major bind time reduction for large SKUs.
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -141,8 +147,8 @@ public class X509V3ExtensionUtilTest {
         Consumer consumer = new Consumer();
         Entitlement e = new Entitlement(pool, consumer, 10);
 
-        List<org.candlepin.json.model.Product> certProds = util.createProducts(prods, "",
-            new HashMap<String, EnvironmentContent>(),  new Consumer(), e);
+        List<org.candlepin.json.model.Product> certProds = util.createProducts(mktProd,
+                prods, "", new HashMap<String, EnvironmentContent>(),  new Consumer(), e);
 
         assertEquals(1, certProds.size());
         assertEquals(brandedName, certProds.get(0).getBrandName());
@@ -167,8 +173,8 @@ public class X509V3ExtensionUtilTest {
         Consumer consumer = new Consumer();
         Entitlement e = new Entitlement(pool, consumer, 10);
 
-        List<org.candlepin.json.model.Product> certProds = util.createProducts(prods, "",
-            new HashMap<String, EnvironmentContent>(),  new Consumer(), e);
+        List<org.candlepin.json.model.Product> certProds = util.createProducts(mktProd,
+                prods, "", new HashMap<String, EnvironmentContent>(),  new Consumer(), e);
 
         assertEquals(1, certProds.size());
         // Should get the first name we encountered
