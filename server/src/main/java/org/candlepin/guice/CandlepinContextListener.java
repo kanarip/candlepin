@@ -17,7 +17,6 @@ package org.candlepin.guice;
 import static org.candlepin.config.ConfigProperties.*;
 
 import org.candlepin.audit.AMQPBusPublisher;
-import org.candlepin.audit.HornetqContextListener;
 import org.candlepin.common.config.Configuration;
 import org.candlepin.common.config.ConfigurationException;
 import org.candlepin.common.config.EncryptedConfiguration;
@@ -40,6 +39,7 @@ import org.hibernate.ejb.HibernateEntityManagerFactory;
 import org.hibernate.event.service.spi.EventListenerRegistry;
 import org.hibernate.event.spi.EventType;
 import org.hibernate.internal.SessionFactoryImpl;
+import org.jboss.resteasy.plugins.guice.GuiceResteasyBootstrapServletContextListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xnap.commons.i18n.I18nManager;
@@ -67,7 +67,7 @@ import javax.servlet.ServletContextEvent;
 public class CandlepinContextListener extends CandlepinGuiceResteasyBootstrap {
     public static final String CONFIGURATION_NAME = Configuration.class.getName();
 
-    private HornetqContextListener hornetqListener;
+//    private HornetqContextListener hornetqListener;
     private PinsetterContextListener pinsetterListener;
     private LoggerContextListener loggerListener;
 
@@ -115,8 +115,8 @@ public class CandlepinContextListener extends CandlepinGuiceResteasyBootstrap {
 
         // Must call super.contextInitialized() before accessing injector
         insertValidationEventListeners(injector);
-        hornetqListener = injector.getInstance(HornetqContextListener.class);
-        hornetqListener.contextInitialized(injector);
+//        hornetqListener = injector.getInstance(HornetqContextListener.class);
+//        hornetqListener.contextInitialized(injector);
         pinsetterListener = injector.getInstance(PinsetterContextListener.class);
         pinsetterListener.contextInitialized();
 
@@ -126,7 +126,7 @@ public class CandlepinContextListener extends CandlepinGuiceResteasyBootstrap {
     @Override
     public void contextDestroyed(ServletContextEvent event) {
         super.contextDestroyed(event);
-        hornetqListener.contextDestroyed();
+//        hornetqListener.contextDestroyed();
         pinsetterListener.contextDestroyed();
         loggerListener = injector.getInstance(LoggerContextListener.class);
         loggerListener.contextDestroyed();

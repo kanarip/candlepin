@@ -26,8 +26,6 @@ import org.candlepin.policy.js.compliance.ComplianceStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Set;
 
 import javax.inject.Inject;
@@ -43,21 +41,21 @@ public class EventSinkImpl implements EventSink {
 
     private static Logger log = LoggerFactory.getLogger(EventSinkImpl.class);
     private EventFactory eventFactory;
-    private HornetqEventDispatcher dispatcher;
+//    private HornetqEventDispatcher dispatcher;
 
     // Hold onto events we will send on successful completion of request/job:
-    private List<Event> eventQueue;
+//    private List<Event> eventQueue;
 
     @Inject
-    public EventSinkImpl(EventFactory eventFactory, HornetqEventDispatcher dispatcher) {
+    public EventSinkImpl(EventFactory eventFactory) {
         this.eventFactory = eventFactory;
-        this.dispatcher = dispatcher;
-        this.eventQueue = new LinkedList<Event>();
+//        this.dispatcher = dispatcher;
+//        this.eventQueue = new LinkedList<Event>();
     }
 
-    private List<Event> getEventQueue() {
-        return eventQueue;
-    }
+//    private List<Event> getEventQueue() {
+//        return eventQueue;
+//    }
 
     /**
      * Adds an event to the queue. Event will not be sent until sendEvents is called,
@@ -66,7 +64,7 @@ public class EventSinkImpl implements EventSink {
     @Override
     public void queueEvent(Event event) {
         log.debug("Queuing event: " + event);
-        getEventQueue().add(event);
+//        getEventQueue().add(event);
     }
 
     /**
@@ -75,10 +73,10 @@ public class EventSinkImpl implements EventSink {
      */
     @Override
     public void sendEvents() {
-        for (Event e : getEventQueue()) {
-            dispatcher.sendEvent(e);
-        }
-        getEventQueue().clear();
+//        for (Event e : getEventQueue()) {
+//            dispatcher.sendEvent(e);
+//        }
+//        getEventQueue().clear();
     }
 
     public void emitConsumerCreated(Consumer newConsumer) {

@@ -95,7 +95,7 @@ public class EventSinkImplTest {
                     }
                 };
         dispatcher.initialize();
-        return new EventSinkImpl(factory, dispatcher);
+        return new EventSinkImpl(factory);
     }
 
     /**Set up the {@link ClientSessionFactory} to throw an exception when
