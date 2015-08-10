@@ -1972,8 +1972,11 @@ public class ConsumerResource {
     @Path("/{consumer_uuid}/release")
     public Release getRelease(
         @PathParam("consumer_uuid") @Verify(Consumer.class) String consumerUuid) {
+        log.info("Beginning getRelease");
         Consumer consumer = consumerCurator.verifyAndLookupConsumer(consumerUuid);
+        log.info("Looked up consumer: {}", consumer);
         if (consumer.getReleaseVer() != null) {
+            log.info("Consumer has a release version.");
             return consumer.getReleaseVer();
         }
         return new Release("");
