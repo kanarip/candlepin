@@ -37,26 +37,35 @@ public abstract class UniqueByOwnerJob extends KingpinJob {
     public static JobStatus scheduleJob(JobCurator jobCurator,
         Scheduler scheduler, JobDetail detail,
         Trigger trigger) throws SchedulerException {
+        log.info("Attempting to schedule: {} owner={}", detail.getKey().getName());
         JobStatus result = jobCurator.getByClassAndOwner(
             detail.getJobDataMap().getString(JobStatus.TARGET_ID),
             (Class<? extends KingpinJob>) detail.getJobClass());
+        log.info("Got JobStatus: {}", result);
         if (result == null) {
+            log.info("No existing job for owner, scheduling");
             return KingpinJob.scheduleJob(jobCurator, scheduler, detail, trigger);
         }
+
+        log.info("Found existing job for owner");
         if (result.getState() == JobStatus.JobState.PENDING ||
             result.getState() == JobStatus.JobState.CREATED ||
             result.getState() == JobStatus.JobState.WAITING) {
-            log.debug("Returning existing job id: " + result.getId());
+            log.info("Returning existing job id: " + result.getId());
             return result;
         }
-        log.debug("Scheduling job without a trigger: " + detail.getKey().getName());
+
+        log.info("Scheduling job without a trigger: " + detail.getKey().getName());
         JobStatus status = KingpinJob.scheduleJob(jobCurator, scheduler, detail, null);
+        log.info("Job scheduled");
         return status;
     }
 
     public static boolean isSchedulable(JobCurator jobCurator, JobStatus status) {
+        log.debug("Checking isSchedulable");
         long running = jobCurator.findNumRunningByOwnerAndClass(
             status.getTargetId(), status.getJobClass());
+        log.debug("Running by owner and class: {}", running);
         return running == 0;  // We can start the job if there are 0 like it running
     }
 }
