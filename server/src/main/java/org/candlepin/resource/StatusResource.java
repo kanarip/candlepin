@@ -105,7 +105,7 @@ public class StatusResource {
         log.info("Getting status");
         try {
             rulesCurator.getUpdatedFromDB();
-            log.info("Got rules updated timestamp from db.")
+            log.info("Got rules updated timestamp from db.");
         }
         catch (Exception e) {
             log.error("Error checking database connection", e);
