@@ -62,14 +62,21 @@ public abstract class KingpinJob implements Job {
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
 
+        String jobUuid = context.getJobDetail().getKey().getName();
+        long startTime = System.currentTimeMillis();
+
         // Store the job's unique ID in log4j's thread local MDC, which will automatically
         // add it to all log entries executed for this job.
         try {
             MDC.put("requestType", "job");
-            MDC.put("requestUuid", context.getJobDetail().getKey().getName());
+            MDC.put("requestUuid", jobUuid);
         }
         catch (NullPointerException npe) {
             //this can occur in testing
+        }
+
+        if (logExecutionTime()) {
+            log.info("Starting job: {}", getClass().getName());
         }
 
         /*
@@ -106,6 +113,10 @@ public abstract class KingpinJob implements Job {
         finally {
             if (startedUow) {
                 endUnitOfWork();
+            }
+            if (logExecutionTime()) {
+                long executionTime = System.currentTimeMillis() - startTime;
+                log.info("Job completed: time={}", executionTime);
             }
         }
     }
@@ -200,5 +211,10 @@ public abstract class KingpinJob implements Job {
                 "' from candlepin config.  Using default of " + maxRetries);
         }
         return maxRetries;
+    }
+
+    // Override in jobs to disable execution time logging.
+    protected boolean logExecutionTime() {
+        return true;
     }
 }

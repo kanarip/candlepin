@@ -41,7 +41,6 @@ public class CleanupGuestIdsCheckInsJob extends KingpinJob {
     }
 
     public void toExecute(JobExecutionContext ctx) throws JobExecutionException {
-        log.info("Cleaning up old consumer gueest ids check-ins.");
         int deleted = guestIdsCheckInCurator.cleanupOldCheckIns();
         log.info("Deleted {} guest ids check-ins.", deleted);
     }
