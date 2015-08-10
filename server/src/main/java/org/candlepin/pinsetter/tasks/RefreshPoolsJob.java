@@ -122,12 +122,14 @@ public class RefreshPoolsJob extends UniqueByOwnerJob {
 
         // Not sure if this is the best way to go:
         // Give each job a UUID to ensure that it is unique
+        log.info("Creating job detail");
         JobDetail detail = newJob(RefreshPoolsJob.class)
             .withIdentity("refresh_pools_" + Util.generateUUID())
             .requestRecovery(true) // recover the job upon restarts
             .usingJobData(map)
             .storeDurably(true) // required if we have to postpone the job
             .build();
+        log.info("Job detail created.");
 
         return detail;
     }

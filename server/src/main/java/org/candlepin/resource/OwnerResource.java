@@ -30,6 +30,9 @@ import org.candlepin.common.exceptions.CandlepinException;
 import org.candlepin.common.exceptions.ForbiddenException;
 import org.candlepin.common.exceptions.IseException;
 import org.candlepin.common.exceptions.NotFoundException;
+import org.candlepin.common.paging.Page;
+import org.candlepin.common.paging.PageRequest;
+import org.candlepin.common.paging.Paginate;
 import org.candlepin.controller.PoolManager;
 import org.candlepin.guice.NonTransactional;
 import org.candlepin.model.Consumer;
@@ -64,9 +67,6 @@ import org.candlepin.model.UeberCertificateGenerator;
 import org.candlepin.model.UpstreamConsumer;
 import org.candlepin.model.activationkeys.ActivationKey;
 import org.candlepin.model.activationkeys.ActivationKeyCurator;
-import org.candlepin.common.paging.Page;
-import org.candlepin.common.paging.PageRequest;
-import org.candlepin.common.paging.Paginate;
 import org.candlepin.pinsetter.tasks.HealEntireOrgJob;
 import org.candlepin.pinsetter.tasks.RefreshPoolsJob;
 import org.candlepin.resource.util.CalculatedAttributesUtil;
@@ -942,12 +942,14 @@ public class OwnerResource {
         @PathParam("owner_key") String ownerKey,
         @QueryParam("auto_create_owner") @DefaultValue("false") Boolean autoCreateOwner,
         @QueryParam("lazy_regen") @DefaultValue("true") Boolean lazyRegen) {
+        log.info("Launching refresh pools for owner: " + ownerKey);
 
         Owner owner = ownerCurator.lookupByKey(ownerKey);
         if (owner == null) {
             if (autoCreateOwner &&
                 ownerService.isOwnerKeyValidForCreation(ownerKey)) {
                 owner = this.createOwner(new Owner(ownerKey, ownerKey));
+                log.info("Looked up owner: {}", owner);
             }
             else {
                 throw new NotFoundException(i18n.tr(
