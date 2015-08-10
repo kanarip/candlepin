@@ -102,8 +102,10 @@ public class StatusResource {
          * been moved to GET /status/db.
          */
         boolean good = true;
+        log.info("Getting status");
         try {
             rulesCurator.getUpdatedFromDB();
+            log.info("Got rules updated timestamp from db.")
         }
         catch (Exception e) {
             log.error("Error checking database connection", e);
@@ -112,6 +114,7 @@ public class StatusResource {
 
         Status status = new Status(good, version, release, standalone,
             jsProvider.getRulesVersion(), jsProvider.getRulesSource());
+        log.info("Created status");
         return status;
     }
 
