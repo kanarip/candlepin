@@ -143,14 +143,17 @@ public abstract class KingpinJob implements Job {
     public static JobStatus scheduleJob(JobCurator jobCurator,
             Scheduler scheduler, JobDetail detail,
             Trigger trigger) throws SchedulerException {
+        log.info("Scheduling job: {}", detail);
 
         scheduler.getListenerManager().addJobListenerMatcher(
             PinsetterJobListener.LISTENER_NAME,
             jobNameEquals(detail.getKey().getName()));
+        log.info("Got listener manager");
 
         JobStatus status = null;
         try {
             status = jobCurator.create(new JobStatus(detail, trigger == null));
+            log.info("Created job");
         }
         catch (EntityExistsException e) {
             // status exists, let's update it
@@ -161,9 +164,11 @@ public abstract class KingpinJob implements Job {
 
         if (trigger != null) {
             scheduler.scheduleJob(detail, trigger);
+            log.info("Job scheduled");
         }
         else {
             scheduler.addJob(detail, false);
+            log.info("Job added");
         }
         return status;
     }
