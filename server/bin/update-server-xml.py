@@ -139,7 +139,7 @@ class SslContextEditor(AbstractBaseEditor):
             # For the time being, TLSv1 needs to stay enabled to support
             # existing python-rhsm based clients.
             ("sslEnabledProtocols", "TLSv1.2,TLSv1.1,TLSv1"),
-            ("SSLProtocol", "TLS"),
+            ("sslProtocol", "TLS"),
             ("keystoreFile", "conf/keystore"),
             ("truststoreFile", "conf/keystore"),
             ("keystorePass", "password"),
