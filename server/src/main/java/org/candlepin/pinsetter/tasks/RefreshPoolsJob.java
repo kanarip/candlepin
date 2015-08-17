@@ -66,13 +66,6 @@ public class RefreshPoolsJob extends UniqueByOwnerJob {
     public void toExecute(JobExecutionContext context) throws JobExecutionException {
 
         try {
-            Thread.sleep(30000);
-        } catch (InterruptedException e1) {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
-        }
-
-        try {
             JobDataMap map = context.getMergedJobDataMap();
             String ownerKey = map.getString(JobStatus.TARGET_ID);
             Boolean lazy = map.getBoolean(LAZY_REGEN);
