@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-2.0.xsd">
+
+    <property name="timestamp.type" value="TIMESTAMP WITHOUT TIME ZONE" dbms="oracle"/>
+    <property name="timestamp.type" value="TIMESTAMP WITHOUT TIME ZONE" dbms="postgresql"/>
+    <property name="timestamp.type" value="DATETIME" dbms="mysql"/>
+
+    <changeSet id="20150820140403-1" author="dgoodwin">
+        <comment>revert to lastcheckin column</comment>
+        <!-- See http://www.liquibase.org/documentation/changes/index.html -->
+        <addColumn tableName="cp_consumer">
+            <column name="lastcheckin" type="${timestamp.type}"/>
+        </addColumn>
+    </changeSet>
+
+</databaseChangeLog>
+<!-- vim: set expandtab sts=4 sw=4 ai: -->

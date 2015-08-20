@@ -169,11 +169,6 @@ public class Consumer extends AbstractHibernateObject implements Linkable, Owned
     @OneToOne(cascade = CascadeType.ALL)
     private KeyPair keyPair;
 
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "consumer", fetch = FetchType.LAZY)
-    private Set<CheckIn> checkIns;
-
-    @Formula("(select max(c.checkInTime) from cp_consumer_checkin c " +
-            "where c.consumer_id = id)")
     private Date lastCheckin;
 
     @OneToMany(mappedBy = "consumer",
@@ -226,7 +221,6 @@ public class Consumer extends AbstractHibernateObject implements Linkable, Owned
         // generate a UUID at this point.
         this.ensureUUID();
         this.entitlements = new HashSet<Entitlement>();
-        this.checkIns = new HashSet<CheckIn>();
     }
 
     /**
@@ -459,25 +453,6 @@ public class Consumer extends AbstractHibernateObject implements Linkable, Owned
 
     public void removeEntitlement(Entitlement entitlement) {
         this.entitlements.remove(entitlement);
-    }
-
-    /**
-     * @return All CheckIns that have not been reaped.
-     */
-    @XmlTransient
-    public Set<CheckIn> getCheckIns() {
-        return checkIns;
-    }
-
-    public void setCheckIns(Set<CheckIn> checkIns) {
-        this.checkIns = checkIns;
-    }
-
-    public void addCheckIn(Date checkInDate) {
-        if (this.checkIns == null) {
-            this.checkIns = new HashSet<CheckIn>();
-        }
-        this.checkIns.add(new CheckIn(this, checkInDate));
     }
 
     /*
