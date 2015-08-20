@@ -428,6 +428,12 @@ class Candlepin
     end
   end
 
+  def autoheal_consumer(uuid = nil)
+    uuid = @uuid unless uuid
+    post("/consumers/#{uuid}/entitlements")
+  end
+
+
   def async_call(immediate, *args, &blk)
     status = blk.call(args)
     return status if immediate
@@ -991,6 +997,10 @@ class Candlepin
 
   def get_status
     return get("/status/")
+  end
+
+  def get_release
+    return get("/consumers/#{@uuid}/release")
   end
 
   def list_certificate_serials
