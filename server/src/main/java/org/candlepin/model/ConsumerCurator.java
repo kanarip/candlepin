@@ -444,9 +444,8 @@ public class ConsumerCurator extends AbstractHibernateCurator<Consumer> {
         Criteria crit = currentSession()
             .createCriteria(GuestId.class)
             .createAlias("consumer", "gconsumer")
-            .createAlias("gconsumer.guestIdsCheckIns", "checkins")
             .add(Restrictions.eq("gconsumer.owner", owner))
-            .addOrder(Order.desc("checkins.updated"))
+            .addOrder(Order.desc("updated"))
             .setMaxResults(1)
             .setProjection(Projections.property("consumer"));
         return (Consumer) crit.add(guestIdCrit).uniqueResult();

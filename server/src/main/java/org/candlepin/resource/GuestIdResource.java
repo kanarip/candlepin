@@ -23,13 +23,13 @@ import org.candlepin.auth.interceptor.Verify;
 import org.candlepin.common.exceptions.BadRequestException;
 import org.candlepin.common.exceptions.ForbiddenException;
 import org.candlepin.common.exceptions.NotFoundException;
+import org.candlepin.common.paging.Page;
+import org.candlepin.common.paging.PageRequest;
 import org.candlepin.model.Consumer;
 import org.candlepin.model.ConsumerCurator;
 import org.candlepin.model.GuestId;
 import org.candlepin.model.GuestIdCurator;
 import org.candlepin.model.VirtConsumerMap;
-import org.candlepin.common.paging.Page;
-import org.candlepin.common.paging.PageRequest;
 
 import com.google.inject.Inject;
 
@@ -200,6 +200,7 @@ public class GuestIdResource {
         }
 
         Consumer consumer = consumerCurator.verifyAndLookupConsumer(consumerUuid);
+
         updated.setConsumer(consumer);
         GuestId toUpdate =
             guestIdCurator.findByGuestIdAndOrg(guestId, consumer.getOwner());

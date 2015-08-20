@@ -14,11 +14,7 @@
  */
 package org.candlepin.model;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import org.candlepin.auth.ConsumerPrincipal;
 import org.candlepin.common.config.Configuration;
@@ -476,14 +472,12 @@ public class ConsumerTest extends DatabaseTestFixture {
         Consumer lookedUp = consumerCurator.find(consumer.getId());
         lookedUp.addGuestId(new GuestId("guest1"));
         lookedUp.addGuestId(new GuestId("guest2"));
-        lookedUp.addGuestIdCheckIn();
         consumerCurator.update(lookedUp);
         lookedUp = consumerCurator.find(consumer.getId());
         assertEquals(2, lookedUp.getGuestIds().size());
         GuestId installed = lookedUp.getGuestIds().
             iterator().next();
         lookedUp.getGuestIds().remove(installed);
-        lookedUp.addGuestIdCheckIn();
         consumerCurator.update(lookedUp);
         lookedUp = consumerCurator.find(consumer.getId());
         assertEquals(1, lookedUp.getGuestIds().size());
