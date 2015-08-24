@@ -1049,7 +1049,6 @@ public class OwnerResource {
     @POST
     @Path("{owner_key}/imports")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    @NonTransactional // a rare case where we commit data despite an error
     public void importManifest(
         @PathParam("owner_key") @Verify(Owner.class) String ownerKey,
         @QueryParam("force") String[] overrideConflicts, MultipartInput input) {
