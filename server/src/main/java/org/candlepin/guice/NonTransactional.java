@@ -26,7 +26,7 @@ import java.lang.annotation.Target;
  * In rare cases we want to actually commit things despite a failed request.
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.METHOD, ElementType.TYPE })
+@Target({ElementType.METHOD})
 public @interface NonTransactional {
 
 }
