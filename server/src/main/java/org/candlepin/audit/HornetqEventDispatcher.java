@@ -79,7 +79,7 @@ public class HornetqEventDispatcher  {
         ClientSession session = sessions.get();
         if (session == null) {
             try {
-                session = factory.createSession();
+                session = factory.createTransactedSession();
             }
             catch (HornetQException e) {
                 throw new RuntimeException(e);
@@ -106,9 +106,10 @@ public class HornetqEventDispatcher  {
     }
 
     public void sendEvent(Event event) {
-        log.info("Sending event: {}", event);
+        log.debug("Queuing event: {}", event);
         try {
-            ClientMessage message = getClientSession().createMessage(true);
+            ClientSession session = getClientSession();
+            ClientMessage message = session.createMessage(true);
             String eventString = mapper.writeValueAsString(event);
             message.getBodyBuffer().writeString(eventString);
             getClientProducer().send(message);

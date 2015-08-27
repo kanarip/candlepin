@@ -15,7 +15,6 @@
 package org.candlepin.pinsetter.core;
 
 import org.candlepin.guice.CandlepinSingletonScope;
-import org.candlepin.guice.SimpleScope;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;
@@ -31,8 +30,6 @@ import org.quartz.spi.TriggerFiredBundle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Named;
-
 /**
  * GuiceJobFactory is a custom Quartz JobFactory implementation which
  * delegates job creation to the Guice injector.
@@ -45,7 +42,6 @@ public class GuiceJobFactory implements JobFactory {
     private Injector injector;
     private CandlepinSingletonScope candlepinSingletonScope;
     private UnitOfWork unitOfWork;
-    @Inject @Named("PinsetterJobScope") private SimpleScope pinsetterJobScope;
 
     @Inject
     public GuiceJobFactory(Injector injector, CandlepinSingletonScope singletonScope,

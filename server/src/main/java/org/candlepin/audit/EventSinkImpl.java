@@ -23,40 +23,35 @@ import org.candlepin.model.Subscription;
 import org.candlepin.model.activationkeys.ActivationKey;
 import org.candlepin.policy.js.compliance.ComplianceStatus;
 
+import com.google.inject.Singleton;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Set;
 
 import javax.inject.Inject;
 
 /**
- * EventSink - Holds onto a queue of events to be sent if the request or job
- * is successful.
+ * EventSink - Queues events to be sent after request/job completes.
  *
+ * TODO: This object may not really be required now, the event factory creates the events,
+ * HornetQEventDispatcher sends them to HornetQ, and HornetQ batches them into the actual
+ * commits.
  * Uses guice's RequestScope for requests, and a custom PinsetterScope for jobs. See
  * EventSinkProvider for details.
  */
+@Singleton
 public class EventSinkImpl implements EventSink {
 
     private static Logger log = LoggerFactory.getLogger(EventSinkImpl.class);
     private EventFactory eventFactory;
     private HornetqEventDispatcher dispatcher;
 
-    // Hold onto events we will send on successful completion of request/job:
-    private List<Event> eventQueue;
-
     @Inject
     public EventSinkImpl(EventFactory eventFactory, HornetqEventDispatcher dispatcher) {
         this.eventFactory = eventFactory;
         this.dispatcher = dispatcher;
-        this.eventQueue = new LinkedList<Event>();
-    }
-
-    private List<Event> getEventQueue() {
-        return eventQueue;
     }
 
     /**
@@ -66,7 +61,7 @@ public class EventSinkImpl implements EventSink {
     @Override
     public void queueEvent(Event event) {
         log.debug("Queuing event: " + event);
-        getEventQueue().add(event);
+        dispatcher.sendEvent(event);
     }
 
     /**
@@ -75,10 +70,14 @@ public class EventSinkImpl implements EventSink {
      */
     @Override
     public void sendEvents() {
-        for (Event e : getEventQueue()) {
-            dispatcher.sendEvent(e);
+        // TODO: move to dispatcher method
+        try {
+            log.info("Committing hornetq transaction.");
+            dispatcher.getClientSession().commit();
         }
-        getEventQueue().clear();
+        catch (Exception e) {
+            log.error("Error committing hornetq transaction: ", e);
+        }
     }
 
     public void emitConsumerCreated(Consumer newConsumer) {
