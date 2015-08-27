@@ -21,8 +21,6 @@ import com.google.inject.Injector;
 import com.google.inject.persist.UnitOfWork;
 
 import org.quartz.Job;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.spi.JobFactory;
@@ -33,8 +31,7 @@ import org.slf4j.LoggerFactory;
 /**
  * GuiceJobFactory is a custom Quartz JobFactory implementation which
  * delegates job creation to the Guice injector.
- *
- * Courtesy https://github.com/brunojcm/guartz
+ * @version $Rev$
  */
 public class GuiceJobFactory implements JobFactory {
 
@@ -51,71 +48,49 @@ public class GuiceJobFactory implements JobFactory {
         this.unitOfWork = unitOfWork;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Job newJob(TriggerFiredBundle bundle, Scheduler scheduler)
         throws SchedulerException {
-        final Class<? extends Job> jobClass = bundle.getJobDetail().getJobClass();
-        Job decorator = new JobScopeDecorator(jobClass);
-        return decorator;
+        Class<Job> jobClass = (Class<Job>) bundle.getJobDetail().getJobClass();
+
+        boolean startedUow = startUnitOfWork();
+        candlepinSingletonScope.enter();
+        try {
+            return injector.getInstance(jobClass);
+        }
+        finally {
+            candlepinSingletonScope.exit();
+            if (startedUow) {
+                endUnitOfWork();
+            }
+        }
     }
 
-    private final class JobScopeDecorator implements Job {
-        private final Class<? extends Job> decoratedJobClass;
-        protected Job decorated;
-
-        private JobScopeDecorator(Class<? extends Job> jobClass) {
-            this.decoratedJobClass = jobClass;
-        }
-
-        @Override
-        public void execute(JobExecutionContext context) throws JobExecutionException {
-
-            // Enter custom scopes and start a unit of work just for the injection done
-            // when creating the job:
-            pinsetterJobScope.enter();
-            candlepinSingletonScope.enter();
-            boolean startedUow = startUnitOfWork();
+    protected boolean startUnitOfWork() {
+        if (unitOfWork != null) {
             try {
-                decorated = injector.getInstance(decoratedJobClass);
+                unitOfWork.begin();
+                return true;
             }
-            finally {
-                candlepinSingletonScope.exit();
-                if (startedUow) {
-                    endUnitOfWork();
-                }
+            catch (IllegalStateException e) {
+                log.debug("Already have an open unit of work");
+                return false;
             }
+        }
+        return false;
+    }
 
+    protected void endUnitOfWork() {
+        if (unitOfWork != null) {
             try {
-                decorated.execute(context);
+                unitOfWork.end();
             }
-            finally {
-                pinsetterJobScope.exit();
-            }
-        }
-
-        protected boolean startUnitOfWork() {
-            if (unitOfWork != null) {
-                try {
-                    unitOfWork.begin();
-                    return true;
-                }
-                catch (IllegalStateException e) {
-                    log.debug("Already have an open unit of work");
-                    return false;
-                }
-            }
-            return false;
-        }
-
-        protected void endUnitOfWork() {
-            if (unitOfWork != null) {
-                try {
-                    unitOfWork.end();
-                }
-                catch (IllegalStateException e) {
-                    log.debug("Unit of work is already closed, doing nothing");
-                    // If there is no active unit of work, there is no reason to close it
-                }
+            catch (IllegalStateException e) {
+                log.debug("Unit of work is already closed, doing nothing");
+                // If there is no active unit of work, there is no reason to close it
             }
         }
     }

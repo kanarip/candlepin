@@ -16,6 +16,7 @@ package org.candlepin.test;
 
 import org.candlepin.audit.Event;
 import org.candlepin.audit.EventSink;
+import org.candlepin.audit.QueueStatus;
 import org.candlepin.model.Consumer;
 import org.candlepin.model.Entitlement;
 import org.candlepin.model.Owner;
@@ -25,6 +26,7 @@ import org.candlepin.model.Subscription;
 import org.candlepin.model.activationkeys.ActivationKey;
 import org.candlepin.policy.js.compliance.ComplianceStatus;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -50,6 +52,10 @@ public class EventSinkForTesting implements EventSink {
 
     @Override
     public void sendEvents() {
+    }
+
+    @Override
+    public void rollback() {
     }
 
     @Override
@@ -92,5 +98,15 @@ public class EventSinkForTesting implements EventSink {
     @Override
     public void emitCompliance(Consumer consumer,
             Set<Entitlement> entitlements, ComplianceStatus compliance) {
+    }
+
+    @Override
+    public void initialize() throws Exception {
+
+    }
+
+    @Override
+    public List<QueueStatus> getQueueInfo() {
+        return null;
     }
 }

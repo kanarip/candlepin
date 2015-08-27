@@ -23,6 +23,7 @@ import org.candlepin.model.Subscription;
 import org.candlepin.model.activationkeys.ActivationKey;
 import org.candlepin.policy.js.compliance.ComplianceStatus;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -30,9 +31,13 @@ import java.util.Set;
  */
 public interface EventSink {
 
+    void initialize() throws Exception;
+
     void queueEvent(Event event);
 
     void sendEvents();
+
+    void rollback();
 
     void emitConsumerCreated(Consumer newConsumer);
 
@@ -59,4 +64,6 @@ public interface EventSink {
     void emitCompliance(Consumer consumer, Set<Entitlement> entitlements, ComplianceStatus compliance);
 
     Event createSubscriptionDeleted(Subscription todelete);
+
+    public List<QueueStatus> getQueueInfo();
 }
