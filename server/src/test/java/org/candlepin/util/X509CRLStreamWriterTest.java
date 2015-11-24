@@ -116,8 +116,8 @@ public class X509CRLStreamWriterTest {
         FileUtils.writeByteArrayToFile(crlToChange, crl.getEncoded());
 
         File outfile = new File(folder.getRoot(), "new.crl");
-        X509CRLStreamWriter stream = new X509CRLStreamWriter(
-            crlToChange, (RSAPrivateKey) keyPair.getPrivate());
+        X509CRLStreamWriter stream = new X509CRLStreamWriter(crlToChange,
+            (RSAPrivateKey) keyPair.getPrivate());
         stream.add(new BigInteger("9000"), new Date(), 0);
         stream.lock();
         OutputStream o = new BufferedOutputStream(new FileOutputStream(outfile));
@@ -163,7 +163,8 @@ public class X509CRLStreamWriterTest {
         };
 
         X509CRLStreamWriter stream = new X509CRLStreamWriter(crlToChange,
-            (RSAPrivateKey) keyPair.getPrivate(), validator);
+            (RSAPrivateKey) keyPair.getPrivate());
+        stream.collectDeadEntries(crlToChange, validator);
         stream.add(new BigInteger("9000"), new Date(), 0);
         stream.lock();
         OutputStream o = new BufferedOutputStream(new FileOutputStream(outfile));
@@ -299,14 +300,7 @@ public class X509CRLStreamWriterTest {
 
         File outfile = new File(folder.getRoot(), "new.crl");
         X509CRLStreamWriter stream = new X509CRLStreamWriter(crlToChange,
-            (RSAPrivateKey) keyPair.getPrivate(),
-            new CRLEntryValidator() {
-                @Override
-                public boolean shouldDelete(X509CRLEntryObject entry) {
-                    return false;
-                }
-            },
-            signingAlg);
+            (RSAPrivateKey) keyPair.getPrivate(), signingAlg);
         stream.add(new BigInteger("9000"), new Date(), 0);
         stream.lock();
         OutputStream o = new BufferedOutputStream(new FileOutputStream(outfile));
