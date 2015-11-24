@@ -14,6 +14,7 @@
  */
 package org.candlepin.util;
 
+import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.util.io.Streams;
 
 import java.io.EOFException;
@@ -82,8 +83,7 @@ public class DERUtil {
     public static int readTag(InputStream s, AtomicInteger count) throws IOException {
         int tag = readAndTrack(s, count);
         if (tag <= 0) {
-            if (tag == 0)
-            {
+            if (tag == 0) {
                 throw new IOException("unexpected end-of-contents marker");
             }
 
@@ -121,6 +121,11 @@ public class DERUtil {
 
         // with tagged object tag number is bottom 5 bits, or stored at the start of the content
         if (tagNo == 0x1f) {
+            /* During CRL operations, we should never actually enter this block.
+             * A tagNo == 0x1f means that the tag is not a universal type and a CRL
+             * shouldn't include private, context-specific, or application-specific
+             * tags.
+             */
             tagNo = 0;
 
             int b = readAndTrack(s, count);
@@ -167,7 +172,7 @@ public class DERUtil {
 
         // indefinite-length encoding
         if (length == 0x80) {
-            // We don't support this and the CRL spec shouldn't encounter any of these
+            // We don't support this and shouldn't encounter any of these anyway
             // since indefinite length formats are forbidden in DER.
             throw new IOException("Indefinite length encoding detected." +
                 "  Check that input is DER and not BER/CER.");
@@ -208,7 +213,7 @@ public class DERUtil {
      * @param length
      * @throws IOException if something goes wrong
      */
-    public static void writeLength(OutputStream out, int length) throws IOException {
+    public static void writeLength(OutputStream out, int length, Signer signer) throws IOException {
         if (length > 127) {
             int size = 1;
             int val = length;
@@ -217,14 +222,41 @@ public class DERUtil {
                 size++;
             }
 
-            out.write((byte) (size | 0x80));
+            byte b = (byte) (size | 0x80);
+            out.write(b);
+            if (signer != null) {
+                signer.update(b);
+            }
 
             for (int i = (size - 1) * 8; i >= 0; i -= 8) {
-                out.write((byte) (length >> i));
+                b = (byte) (length >> i);
+                out.write(b);
+                if (signer != null) {
+                    signer.update(b);
+                }
             }
         }
         else {
-            out.write((byte) length);
+            byte b = (byte) length;
+            out.write(b);
+            if (signer != null) {
+                signer.update(b);
+            }
+        }
+    }
+
+    public static void writeTag(OutputStream out, int tag, int tagNo, Signer signer) throws IOException {
+        int rebuiltTag = rebuildTag(tag, tagNo);
+        out.write(rebuiltTag);
+        if (signer != null) {
+            signer.update((byte) rebuiltTag);
+        }
+    }
+
+    public static void writeValue(OutputStream out, byte[] value, Signer signer) throws IOException {
+        out.write(value);
+        if (signer != null) {
+            signer.update(value, 0, value.length);
         }
     }
 
@@ -235,5 +267,10 @@ public class DERUtil {
         }
 
         return tag;
+    }
+
+    public static void writeDER(OutputStream out, byte[] der, Signer signer) throws IOException {
+        out.write(der);
+        signer.update(der, 0, der.length);
     }
 }
