@@ -153,6 +153,7 @@ public interface PoolManager {
 
     int removeAllEntitlements(Consumer consumer);
 
+    void revokeEntitlements(List<Entitlement> ents);
     void revokeEntitlement(Entitlement entitlement);
 
     Pool updatePoolQuantity(Pool pool, long adjust);
@@ -307,4 +308,6 @@ public interface PoolManager {
      *  a list of known master pools
      */
     List<Pool> listMasterPools();
+
+    void deletePools(List<Pool> pools);
 }
