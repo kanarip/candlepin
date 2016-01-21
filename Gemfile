@@ -13,11 +13,12 @@ gem 'stringex'
 gem 'httpclient'
 gem 'activesupport'
 
-group :development do
+group :development, :test do
   gem 'webrick'
   gem 'pry'
   gem 'pry-byebug'
   gem 'pry-stack_explorer'
+  gem 'fuubar'
   # Rubocop can add new checks in new releases which
   # can result in new errors, so we control the version
   # very strictly

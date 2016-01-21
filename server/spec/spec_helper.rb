@@ -1,10 +1,82 @@
 require 'base64'
 require 'zip/zip'
 
+require_relative './contexts'
+require_relative '../client/ruby/candlepin'
+
+module SpecUtils
+  RANDOM_CHARS = [('a'..'z'), ('A'..'Z'), ('1'..'9')].map(&:to_a).flatten
+
+  def rand_string(prefix = '', len = 9)
+    rand = (0...len).map { RANDOM_CHARS[rand(RANDOM_CHARS.length)] }.join
+    prefix.empty? ? rand : "#{prefix}-#{rand}"
+  end
+
+  def flatten_attributes(attributes)
+    attributes.each_with_object({}) do |entry, result|
+      result[entry[:name].to_sym] = entry[:value]
+    end
+  end
+
+  def parse_file(filename)
+    JSON.parse(File.read(filename))
+  end
+
+  def files_in_dir(dir_name)
+    Dir.entries(dir_name).reject do |e|
+      e == '.' || e == '..'
+    end
+  end
+
+  def find_guest_virt_pool(client, guest_uuid)
+    pools = client.list_pools(:consumer => guest_uuid).ok_content
+    return pools.detect do |i|
+      !i[:sourceEntitlement].nil?
+    end
+  end
+
+  def filter_unmapped_guest_pools(pools)
+    # need to ignore the unmapped guest pools
+    pools.select! do |p|
+      unmapped = p[:attributes].detect do |i|
+        i[:name] == 'unmapped_guests_only'
+      end
+      unmapped.nil? || unmapped['value'] == 'false'
+    end
+  end
+
+  def extract_payload(certificate)
+    payload = certificate.split("-----BEGIN ENTITLEMENT DATA-----\n")[1]
+    payload = payload.split("-----END ENTITLEMENT DATA-----")[0]
+    asn1_body = Base64.decode64(payload)
+    body = Zlib::Inflate.inflate(asn1_body)
+    JSON.parse(body)
+  end
+
+  def new_owner(key = nil)
+    key ||= rand_string('owner')
+    user_client.create_owner(
+      :owner => key,
+      :display_name => key,
+    ).ok_content
+  end
+
+  def new_owner_user(owner, super_admin = false)
+    key = owner.is_a?(Hash) ? owner[:key] : owner
+    user_client.create_user_under_owner(
+      :username => rand_string('owner_user'),
+      :password => rand_string,
+      :owner => key,
+      :super_admin => super_admin,
+    )
+  end
+end
 
 module CleanupHooks
+  include SpecUtils
+
   def cleanup_before
-    @cp = Candlepin.new('admin', 'admin')
+    @cp = Candlepin::BasicAuthClient.new
     @owners = []
     @created_products = []
     @dist_versions = []
@@ -15,36 +87,40 @@ module CleanupHooks
   end
 
   def cleanup_after
-    @roles.reverse_each { |r| @cp.delete_role r['id'] }
-    @owners.reverse_each { |owner| @cp.delete_owner owner['key'] }
-    @users.reverse_each { |user| @cp.delete_user user['username'] }
-    @dist_versions.reverse_each { |dist_version| @cp.delete_distributor_version dist_version['id'] }
-    @cdns.reverse_each { |cdn| @cp.delete_cdn cdn['label'] }
+    @roles.reverse_each do |r|
+      @cp.delete_role(:role_id => r[:id])
+    end
+    @owners.reverse_each do |owner|
+      @cp.delete_owner(:owner => owner[:key])
+    end
+    @users.reverse_each do |user|
+      @cp.delete_user(:username => user[:username])
+    end
+    @dist_versions.reverse_each do |dist|
+      @cp.delete_distributor_version(:id => dist[:id])
+    end
+    @cdns.reverse_each do |cdn|
+      @cp.delete_cdn(:lable => cdn[:label])
+    end
 
     # restore the original rules
-    if (@rules)
-      @cp.delete_rules
-    end
-    if !@cp.get_status()['standalone']
+    @cp.delete_rules if @rules
+    status = @cp.get_status.ok_content
+    unless status[:standalone]
       begin
-        @cp.delete('/hostedtest/subscriptions/', nil, true)
-      rescue RestClient::ResourceNotFound
-        puts "skipping hostedtest cleanup"
+        @cp.delete('/hostedtest/subscriptions/')
+      rescue
+        puts "Skipping hostedtest cleanup"
       end
     end
   end
 end
 
 RSpec.configure do |config|
-  # TODO: The "should" method has been deprecated in RSpec 2.11 and replaced with "expect".
-  # Our current version of Buildr uses RSpec 2.9.0, but newer Buildr versions use the
-  # newer RSpec.  Next time we upgrade Buildr, uncomment the block below to catch all
-  # instances of "should". (Both syntaxes can exist side-by-side by setting c.syntax = [:should, :expect])
-  # See also http://myronmars.to/n/dev-blog/2012/06/rspecs-new-expectation-syntax
-  #
-  #config.expect_with :rspec do |c|
-  #  c.syntax = :expect
-  #end
+  # disallow RSpec's legacy "should" tests
+  config.expect_with :rspec do |c|
+    c.syntax = :expect
+  end
 
   # Sometimes when diagnosing a test failure, you might not want to
   # run the :after hook so you can do a post-mortem.  If that's the case
@@ -55,106 +131,36 @@ RSpec.configure do |config|
   include CleanupHooks
 
   config.before(:each) do
-    cleanup_before()
-  end
-
-  config.before(:each, :type => :virt) do
-    pending("candlepin running in standalone mode") if is_hosted?
-    @owner = create_owner random_string('virt_owner')
-    @user = user_client(@owner, random_string('virt_user'))
-
-    # Create a sub for a virt limited product:
-    @virt_limit_product = create_product(nil, nil, {
-      :attributes => {
-        :virt_limit => 3
-      }
-    })
-
-    #create two subs, to do migration testing
-    create_pool_and_subscription(@owner['key'], @virt_limit_product.id, 10,
-				[], '', '', '', nil, nil, true)
-    create_pool_and_subscription(@owner['key'], @virt_limit_product.id, 10)
-
-    @pools = @user.list_pools :owner => @owner.id, \
-      :product => @virt_limit_product.id
-
-    # includes an extra unmapped guest pool for each
-    @pools.size.should == 4
-    @virt_limit_pool = filter_unmapped_guest_pools(@pools)[0]
-
-    # Setup two virt guest consumers:
-    @uuid1 = random_string('system.uuid')
-    @uuid2 = random_string('system.uuid')
-    @guest1 = @user.register(random_string('guest'), :system, nil,
-      {'virt.uuid' => @uuid1, 'virt.is_guest' => 'true', 'uname.machine' => 'x86_64'}, nil, nil, [], [])
-    @guest1_client = Candlepin.new(nil, nil, @guest1['idCert']['cert'], @guest1['idCert']['key'])
-
-    @guest2 = @user.register(random_string('guest'), :system, nil,
-      {'virt.uuid' => @uuid2, 'virt.is_guest' => 'true'}, nil, nil, [], [])
-    @guest2_client = Candlepin.new(nil, nil, @guest2['idCert']['cert'], @guest2['idCert']['key'])
+    cleanup_before
   end
 
   config.after(:each) do
     if RSpec.configuration.run_after_hook?
-      cleanup_after()
+      cleanup_after
     end
   end
 end
 
-module VirtHelper
-  def find_guest_virt_pool(guest_client, guest_uuid)
-    pools = guest_client.list_pools :consumer => guest_uuid
-    return pools.find_all { |i| !i['sourceEntitlement'].nil? }[0]
-  end
-
-  def filter_unmapped_guest_pools(pools)
-    # need to ignore the unmapped guest pools
-    pools.select! do |p|
-      unmapped = p['attributes'].select {|i| i['name'] == 'unmapped_guests_only' }[0]
-      unmapped.nil? || unmapped['value'] == 'false'
-    end
+RSpec::Matchers.define :be_success do
+  match do |res|
+    (200..206).cover?(res.status_code)
   end
 end
 
-module CertificateMethods
-  def extract_payload(certificate)
-    payload = certificate.split("-----BEGIN ENTITLEMENT DATA-----\n")[1]
-    payload = payload.split("-----END ENTITLEMENT DATA-----")[0]
-    asn1_body = Base64.decode64(payload)
-    body = Zlib::Inflate.inflate(asn1_body)
-    JSON.parse(body)
+RSpec::Matchers.define :be_unauthorized do
+  match do |res|
+    res.status_code == 401
   end
 end
 
-module SpecUtils
-  def flatten_attributes(attributes)
-    attrs = {}
-    attributes.each do |attribute| attrs[attribute['name']] = attribute['value'] end
-    return attrs
-  end
-
-  def parse_file(filename)
-    JSON.parse File.read(filename)
-  end
-
-  def files_in_dir(dir_name)
-    Dir.entries(dir_name).select {|e| e != '.' and e != '..' }
+RSpec::Matchers.define :be_forbidden do
+  match do |res|
+    res.status_code == 403
   end
 end
 
-# This allows for dot notation instead of using hashes for everything
-class Hash
-  # Not sure if this is a great idea
-  # Override Ruby's id method to access our id attribute
-  def id
-    self['id']
-  end
-
-  def method_missing(method, *args)
-    if ((method.to_s =~ /=$/) != nil)
-        self[method.to_s.gsub(/=$/, '')] = args[0]
-    else
-        self[method.to_s]
-    end
+RSpec::Matchers.define :be_missing do
+  match do |res|
+    res.status_code == 404
   end
 end

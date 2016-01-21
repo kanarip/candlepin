@@ -25,6 +25,16 @@ module HTTP
         original_content
       end
     end
+
+    def ok_content
+      if ok?
+        content
+      else
+        raise HTTPClient::BadResponseError(
+          "unexpected response: #{header.inspect}"
+        )
+      end
+    end
   end
 end
 
