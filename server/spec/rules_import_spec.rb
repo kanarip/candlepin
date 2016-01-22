@@ -7,6 +7,8 @@ require 'base64'
 describe 'Rules Import', :serial => true do
 
   before(:each) do
+    @original_rules = @cp.list_rules
+
     # Make sure we're using the rpm rules by deleting any custom
     # ones that may have been left in the database:
     @cp.delete_rules
@@ -21,8 +23,13 @@ describe 'Rules Import', :serial => true do
   end
 
   after(:each) do
-    # Revert to rpm rules:
-    @cp.delete_rules
+    # Revert to original rules (should still be encoded)
+    if @original_rules != nil
+      @cp.upload_rules(@original_rules)
+    else
+      # We didn't have any rules stored, so let's just delete any garbage we uploaded
+      @cp.delete_rules
+    end
   end
 
   it 'gets rules' do
